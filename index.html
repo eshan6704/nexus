@@ -1127,9 +1127,101 @@ function _patchSection(section, rows) {
   return anyNew;
 }
 
+// ════════════════════════════════════════════════════════════
+// HARDCODED DEFAULTS (shown instantly on first paint)
+// Overwritten silently once real snapshot data arrives.
+// ════════════════════════════════════════════════════════════
+// Symbols match EXACTLY what the backend returns in snapshot
+const DEFAULTS = {
+  global: [
+    {symbol:'^GSPC',     name:'S&P 500',      icon:'🇺🇸', region:'USA',       currency:'USD', price:5487.03, change:0.24,  absChange:13.21,   high:5501.10, low:5462.88, volume:2312450000},
+    {symbol:'^DJI',      name:'Dow Jones',     icon:'🇺🇸', region:'USA',       currency:'USD', price:39127.80,change:0.11,  absChange:43.05,   high:39210.00,low:38980.00,volume:312000000},
+    {symbol:'^IXIC',     name:'Nasdaq',        icon:'🇺🇸', region:'USA',       currency:'USD', price:17320.56,change:0.38,  absChange:65.14,   high:17410.20,low:17220.44,volume:1850000000},
+    {symbol:'^FTSE',     name:'FTSE 100',      icon:'🇬🇧', region:'UK',        currency:'USD', price:8287.30, change:-0.18, absChange:-14.92,  high:8310.00, low:8260.00, volume:742000000},
+    {symbol:'^GDAXI',    name:'DAX 40',        icon:'🇩🇪', region:'Germany',   currency:'USD', price:18765.40,change:0.45,  absChange:84.10,   high:18810.00,low:18650.00,volume:890000000},
+    {symbol:'^FCHI',     name:'CAC 40',        icon:'🇫🇷', region:'France',    currency:'USD', price:7432.10, change:-0.12, absChange:-8.90,   high:7465.00, low:7410.00, volume:410000000},
+    {symbol:'^N225',     name:'Nikkei 225',    icon:'🇯🇵', region:'Japan',     currency:'USD', price:38487.20,change:-0.55, absChange:-212.30, high:38820.00,low:38390.00,volume:1230000000},
+    {symbol:'^HSI',      name:'Hang Seng',     icon:'🇭🇰', region:'Hong Kong', currency:'USD', price:18120.50,change:0.92,  absChange:165.30,  high:18250.00,low:18050.00,volume:1120000000},
+    {symbol:'000001.SS', name:'Shanghai Comp', icon:'🇨🇳', region:'China',     currency:'USD', price:3088.33, change:-0.22, absChange:-6.82,   high:3105.00, low:3078.00, volume:28700000000},
+    {symbol:'^AXJO',     name:'ASX 200',       icon:'🇦🇺', region:'Australia', currency:'USD', price:7832.10, change:0.33,  absChange:25.78,   high:7860.00, low:7805.00, volume:520000000},
+    {symbol:'^STOXX50E', name:'Euro Stoxx 50', icon:'🇪🇺', region:'Europe',    currency:'USD', price:4921.30, change:0.28,  absChange:13.70,   high:4940.00, low:4900.00, volume:620000000},
+    {symbol:'^VIX',      name:'VIX',           icon:'📉', region:'USA',       currency:'USD', price:14.82,  change:-3.10, absChange:-0.47,   high:15.60,   low:14.55,   volume:0},
+  ],
+  futures: [
+    {symbol:'ES=F',  name:'E-Mini S&P 500', icon:'📈', type:'Index',  currency:'USD', price:5492.25, change:0.20,  absChange:10.98,  high:5508.00, low:5468.00, volume:1820000},
+    {symbol:'NQ=F',  name:'E-Mini Nasdaq',  icon:'📈', type:'Index',  currency:'USD', price:19855.50,change:0.35,  absChange:69.25,  high:19920.00,low:19740.00,volume:950000},
+    {symbol:'YM=F',  name:'E-Mini Dow',     icon:'📈', type:'Index',  currency:'USD', price:39150.00,change:0.12,  absChange:46.00,  high:39230.00,low:38990.00,volume:210000},
+    {symbol:'RTY=F', name:'E-Mini Russell', icon:'📈', type:'Index',  currency:'USD', price:2042.30, change:-0.18, absChange:-3.70,  high:2058.00, low:2035.00, volume:182000},
+    {symbol:'GC=F',  name:'Gold',           icon:'🥇', type:'Metal',  currency:'USD', price:2387.50, change:0.31,  absChange:7.40,   high:2398.00, low:2372.00, volume:198000},
+    {symbol:'SI=F',  name:'Silver',         icon:'🥈', type:'Metal',  currency:'USD', price:29.34,   change:-0.41, absChange:-0.12,  high:29.80,   low:29.10,   volume:87000},
+    {symbol:'PL=F',  name:'Platinum',       icon:'⚪', type:'Metal',  currency:'USD', price:1012.30, change:-0.18, absChange:-1.83,  high:1022.00, low:1005.00, volume:18000},
+    {symbol:'PA=F',  name:'Palladium',      icon:'⚪', type:'Metal',  currency:'USD', price:887.40,  change:1.02,  absChange:8.96,   high:895.00,  low:875.00,  volume:7200},
+    {symbol:'CL=F',  name:'Crude Oil WTI',  icon:'🛢️', type:'Energy', currency:'USD', price:78.42,   change:-0.74, absChange:-0.58,  high:79.30,   low:77.95,   volume:412000},
+    {symbol:'BZ=F',  name:'Brent Oil',      icon:'🛢️', type:'Energy', currency:'USD', price:82.34,   change:-0.55, absChange:-0.46,  high:83.10,   low:81.90,   volume:312000},
+    {symbol:'NG=F',  name:'Natural Gas',    icon:'🔥', type:'Energy', currency:'USD', price:2.187,   change:1.25,  absChange:0.027,  high:2.21,    low:2.15,    volume:235000},
+    {symbol:'ZC=F',  name:'Corn',           icon:'🌽', type:'Agri',   currency:'USD', price:442.50,  change:-0.32, absChange:-1.42,  high:448.00,  low:440.00,  volume:62000},
+    {symbol:'ZW=F',  name:'Wheat',          icon:'🌾', type:'Agri',   currency:'USD', price:556.25,  change:-0.62, absChange:-3.50,  high:562.00,  low:553.00,  volume:48000},
+    {symbol:'ZS=F',  name:'Soybeans',       icon:'🫘', type:'Agri',   currency:'USD', price:1142.75, change:0.22,  absChange:2.50,   high:1152.00, low:1136.00, volume:38000},
+  ],
+  india: [
+    {symbol:'^BSESN',    name:'Sensex',     icon:'🇮🇳', exchange:'BSE', currency:'USD', price:79032.73,change:0.38,  absChange:299.86, high:79400.00,low:78600.00,volume:182000000},
+    {symbol:'^NSEI',     name:'Nifty 50',   icon:'🇮🇳', exchange:'NSE', currency:'USD', price:24012.35,change:0.42,  absChange:100.52, high:24120.00,low:23880.00,volume:312000000},
+    {symbol:'^NSEBANK',  name:'Nifty Bank', icon:'🇮🇳', exchange:'NSE', currency:'USD', price:52341.80,change:0.58,  absChange:303.80, high:52580.00,low:52050.00,volume:187000000},
+    {symbol:'^CNXIT',    name:'Nifty IT',   icon:'💻', exchange:'NSE', currency:'USD', price:38124.30,change:-0.22, absChange:-84.03, high:38350.00,low:37980.00,volume:18000000},
+    {symbol:'INDIAVIX.NS',name:'India VIX', icon:'📉', exchange:'NSE', currency:'USD', price:13.42,  change:-1.84, absChange:-0.25,  high:14.10,   low:13.20,   volume:0},
+  ],
+  commodity: [
+    {symbol:'GC=F',  name:'Gold',           icon:'🥇', unit:'oz',    currency:'USD', price:2387.50, change:0.31,  absChange:7.40,   high:2398.00, low:2372.00, volume:198000},
+    {symbol:'SI=F',  name:'Silver',         icon:'🥈', unit:'oz',    currency:'USD', price:29.34,   change:-0.41, absChange:-0.12,  high:29.80,   low:29.10,   volume:87000},
+    {symbol:'PL=F',  name:'Platinum',       icon:'⚪', unit:'oz',    currency:'USD', price:1012.30, change:-0.18, absChange:-1.83,  high:1022.00, low:1005.00, volume:18000},
+    {symbol:'PA=F',  name:'Palladium',      icon:'⚪', unit:'oz',    currency:'USD', price:887.40,  change:1.02,  absChange:8.96,   high:895.00,  low:875.00,  volume:7200},
+    {symbol:'CL=F',  name:'Crude Oil (WTI)',icon:'🛢️', unit:'bbl',   currency:'USD', price:78.42,   change:-0.74, absChange:-0.58,  high:79.30,   low:77.95,   volume:412000},
+    {symbol:'BZ=F',  name:'Brent Oil',      icon:'🛢️', unit:'bbl',   currency:'USD', price:82.34,   change:-0.55, absChange:-0.46,  high:83.10,   low:81.90,   volume:312000},
+    {symbol:'NG=F',  name:'Natural Gas',    icon:'🔥', unit:'mmBtu', currency:'USD', price:2.187,   change:1.25,  absChange:0.027,  high:2.21,    low:2.15,    volume:235000},
+    {symbol:'HG=F',  name:'Copper',         icon:'🔶', unit:'lb',    currency:'USD', price:4.412,   change:0.61,  absChange:0.027,  high:4.45,    low:4.38,    volume:142000},
+    {symbol:'ALI=F', name:'Aluminum',       icon:'⚙️', unit:'mt',    currency:'USD', price:2312.50, change:-0.28, absChange:-6.50,  high:2330.00, low:2298.00, volume:28000},
+    {symbol:'ZW=F',  name:'Wheat',          icon:'🌾', unit:'bu',    currency:'USD', price:556.25,  change:-0.62, absChange:-3.50,  high:562.00,  low:553.00,  volume:48000},
+    {symbol:'ZC=F',  name:'Corn',           icon:'🌽', unit:'bu',    currency:'USD', price:442.50,  change:-0.32, absChange:-1.42,  high:448.00,  low:440.00,  volume:62000},
+    {symbol:'KC=F',  name:'Coffee',         icon:'☕', unit:'lb',    currency:'USD', price:198.35,  change:0.88,  absChange:1.73,   high:201.00,  low:196.50,  volume:22000},
+    {symbol:'CT=F',  name:'Cotton',         icon:'🧵', unit:'lb',    currency:'USD', price:74.82,   change:-0.44, absChange:-0.33,  high:75.60,   low:74.40,   volume:18000},
+    {symbol:'SB=F',  name:'Sugar',          icon:'🍬', unit:'lb',    currency:'USD', price:19.42,   change:0.31,  absChange:0.06,   high:19.65,   low:19.28,   volume:42000},
+  ],
+  forex: [
+    {symbol:'EURUSD=X', name:'EUR/USD', pair:'EUR/USD', icon:'🇪🇺🇺🇸', currency:'USD', price:1.0842, change:0.12,  absChange:0.0013,  high:1.0865, low:1.0820},
+    {symbol:'GBPUSD=X', name:'GBP/USD', pair:'GBP/USD', icon:'🇬🇧🇺🇸', currency:'USD', price:1.2734, change:0.08,  absChange:0.0010,  high:1.2758, low:1.2705},
+    {symbol:'USDJPY=X', name:'USD/JPY', pair:'USD/JPY', icon:'🇺🇸🇯🇵', currency:'USD', price:157.42, change:-0.22, absChange:-0.35,   high:157.88, low:156.98},
+    {symbol:'USDCHF=X', name:'USD/CHF', pair:'USD/CHF', icon:'🇺🇸🇨🇭', currency:'USD', price:0.9024, change:0.09,  absChange:0.0008,  high:0.9045, low:0.9003},
+    {symbol:'AUDUSD=X', name:'AUD/USD', pair:'AUD/USD', icon:'🇦🇺🇺🇸', currency:'USD', price:0.6612, change:-0.14, absChange:-0.0009, high:0.6635, low:0.6594},
+    {symbol:'USDCAD=X', name:'USD/CAD', pair:'USD/CAD', icon:'🇺🇸🇨🇦', currency:'USD', price:1.3682, change:0.05,  absChange:0.0007,  high:1.3710, low:1.3655},
+    {symbol:'NZDUSD=X', name:'NZD/USD', pair:'NZD/USD', icon:'🇳🇿🇺🇸', currency:'USD', price:0.6124, change:-0.09, absChange:-0.0006, high:0.6145, low:0.6108},
+    {symbol:'USDINR=X', name:'USD/INR', pair:'USD/INR', icon:'🇺🇸🇮🇳', currency:'USD', price:83.52,  change:0.03,  absChange:0.025,   high:83.58,  low:83.44},
+    {symbol:'EURGBP=X', name:'EUR/GBP', pair:'EUR/GBP', icon:'🇪🇺🇬🇧', currency:'USD', price:0.8512, change:0.04,  absChange:0.0003,  high:0.8528, low:0.8498},
+    {symbol:'EURJPY=X', name:'EUR/JPY', pair:'EUR/JPY', icon:'🇪🇺🇯🇵', currency:'USD', price:170.64, change:-0.11, absChange:-0.19,   high:171.20, low:170.10},
+    {symbol:'GBPJPY=X', name:'GBP/JPY', pair:'GBP/JPY', icon:'🇬🇧🇯🇵', currency:'USD', price:200.42, change:-0.08, absChange:-0.16,   high:201.10, low:199.80},
+  ],
+};
+
+// Seed _known with defaults so first poll only patches cells that actually changed
+function seedDefaults() {
+  const SECS = ['global','futures','india','commodity','forex'];
+  for (const sec of SECS) {
+    const rows = DEFAULTS[sec];
+    marketData[sec] = rows.map(r => ({...r, stale: true}));  // mark as stale until real data
+    for (const d of rows) {
+      _known[d.symbol] = {
+        price: d.price, change: d.change, absChange: d.absChange,
+        high: d.high, low: d.low, volume: d.volume, stale: true
+      };
+    }
+    renderSection(sec, marketData[sec]);
+    document.getElementById('count-' + sec).textContent = rows.length;
+  }
+}
+
 // ── polling ───────────────────────────────────────────────────────────────────
 let _pollTimer = null;
 let _pingTimer = null;
+let _backendFetching = true;   // true until backend returns at least one non-stale row
 const POLL_LIVE = 4000;
 const POLL_BG   = 60000;
 
@@ -1142,6 +1234,8 @@ async function _doPoll() {
   try {
     const snap = await nexusSnapshot();
     const d    = snap.data || {};
+    // Track whether backend is still warming up (all rows stale = fetching in progress)
+    _backendFetching = snap.fetching === true;
     const SECS = ['global','futures','india','commodity','forex'];
 
     let anyPatched = false;
@@ -1194,10 +1288,13 @@ function startNexusPolling() {
 
   function schedulePoll() {
     const ready    = _hasFirstData();
+    // If backend is still fetching (all stale), retry every 3s regardless of visibility
     const interval = !ready
-      ? 2000   // fast poll until first real render
-      : (document.visibilityState === 'visible' && _isMarketPageActive())
-        ? POLL_LIVE : POLL_BG;
+      ? 2000   // pre-first-render: fast
+      : _backendFetching
+        ? 3000  // backend still warming up: aggressive
+        : (document.visibilityState === 'visible' && _isMarketPageActive())
+          ? POLL_LIVE : POLL_BG;
     _pollTimer = setTimeout(async () => {
       await _doPoll();
       schedulePoll();
@@ -2454,8 +2551,9 @@ function switchTab(btn, id) {
 // ════════════════════════════════════════════════════════════
 // BOOT
 // ════════════════════════════════════════════════════════════
-startNexusPolling();   // streaming poll: 4s live, 60s bg; ping keeps backend in 3-min mode
-loadAllMarkets();      // immediate first render (partial data ok)
+seedDefaults();        // instant first paint with hardcoded values (stale-shimmer)
+startNexusPolling();   // streaming poll: 4s live, 60s bg; patch cells as real data arrives
+loadAllMarkets();      // also fetch crypto immediately
 // Crypto refresh — separate from market poll
 setInterval(() => {
   if (document.visibilityState === 'visible') {
